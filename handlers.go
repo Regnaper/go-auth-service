@@ -122,9 +122,25 @@ func DeleteAllHandler(w http.ResponseWriter, r *http.Request) {
 	guid := params["guid"]
 	fmt.Printf("GUID: %v\n", guid)
 
-	filter := bson.D{{"guid", guid}}
-	deleteTokens(client, collection, filter)
+	cookie, err := r.Cookie("refresh_token")
+	if err != nil {
+		fmt.Println("Refresh token wasn't read!")
+	} else {
+		oldRefreshToken, err := base64.StdEncoding.DecodeString(cookie.Value)
+		if err != nil {
+			log.Fatal(err)
+		}
+		fmt.Printf("Refresh token: %v\n", string(oldRefreshToken))
 
+		userTokens := findTokensByGuid(collection, guid)
+		for _, token := range userTokens {
+			if verifyRefreshToken([]byte(token.RefreshToken), oldRefreshToken) {
+				filter := bson.D{{"guid", guid}}
+				deleteTokens(client, collection, filter)
+				break
+			}
+		}
+	}
 	disconnect(client)
 	http.Redirect(w, r, "/", 301)
 }
