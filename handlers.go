@@ -28,14 +28,15 @@ func RefreshHandler(w http.ResponseWriter, r *http.Request) {
 			log.Fatal(err)
 		}
 		fmt.Printf("Old refresh token: %v\n", string(oldRefreshToken))
-		userTokens := findTokensByGuid(collection, guid)
+		userTokens := findTokensByGuid(collection, guid) // get all tokens for user
 		for _, token := range userTokens {
+			// update refresh and access token if refresh token from cookie was find
 			if verifyRefreshToken([]byte(token.RefreshToken), oldRefreshToken) {
 				refreshToken, refreshExpiresAt := newToken(guid, signingKey, time.Hour*72)
 				accessToken, accessExpiresAt := newToken(guid, signingKey, time.Minute*30)
 
 				filter := bson.D{{"refreshtoken", token.RefreshToken}}
-				hashedRefreshToken := hashToken([]byte(refreshToken))
+				hashedRefreshToken := hashToken([]byte(refreshToken)) // to hash new refresh token
 				update := bson.D{
 					{"$set", bson.D{
 						{"refreshtoken", hashedRefreshToken},
@@ -45,13 +46,15 @@ func RefreshHandler(w http.ResponseWriter, r *http.Request) {
 				updateTokens(client, collection, filter, update)
 
 				addCookie("access_token", accessToken, accessExpiresAt, false, w)
+				// add refresh token to cookies with httpOnly
 				addCookie("refresh_token", base64.StdEncoding.EncodeToString([]byte(refreshToken)),
 					refreshExpiresAt, true, w)
 				break
 			}
 		}
 	}
-	http.Redirect(w, r, "/", 301)
+	// redirect to application server page. Disabled for watching cookies after request
+	//http.Redirect(w, r, "/", 301)
 	disconnect(client)
 }
 
@@ -77,7 +80,7 @@ func CreateHandler(w http.ResponseWriter, r *http.Request) {
 	addCookie("refresh_token", base64.StdEncoding.EncodeToString([]byte(refreshToken)),
 		refreshExpiresAt, true, w)
 
-	http.Redirect(w, r, "/", 301)
+	//http.Redirect(w, r, "/", 301)
 	disconnect(client)
 }
 

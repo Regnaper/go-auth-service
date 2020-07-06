@@ -7,8 +7,8 @@ import (
 	"os"
 )
 
-var signingKey = []byte(os.Getenv("SECRET_KEY"))
-var domain, _ = os.Hostname()
+var signingKey = []byte(os.Getenv("SECRET_KEY")) // signing key for JWT
+var domain, _ = os.Hostname() // server domain name for cookie
 var port = os.Getenv("PORT")
 var databaseName = "tokensdb"
 

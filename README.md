@@ -19,3 +19,5 @@
    и связанный с ним access токен;
 - secrets/{guid} (method: DELETE)
 -- получает из cookies клиента refresh токен и удаляет для пользователя guid все refresh токены и связанные с ними access токены.
+
+Результат: https://rocky-escarpment-09841.herokuapp.com/
