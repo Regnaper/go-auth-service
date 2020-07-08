@@ -25,22 +25,23 @@ func RefreshHandler(w http.ResponseWriter, r *http.Request) {
 	} else {
 		oldRefreshToken, err := base64.StdEncoding.DecodeString(cookie.Value)
 		if err != nil {
-			log.Fatal(err)
+			log.Println(err)
 		}
 		fmt.Printf("Old refresh token: %v\n", string(oldRefreshToken))
 		userTokens := findTokensByGuid(collection, guid) // get all tokens for user
 		for _, token := range userTokens {
 			// update refresh and access token if refresh token from cookie was find
 			if verifyRefreshToken([]byte(token.RefreshToken), oldRefreshToken) {
-				refreshToken, refreshExpiresAt := newToken(guid, signingKey, time.Hour*72)
-				accessToken, accessExpiresAt := newToken(guid, signingKey, time.Minute*30)
+				var signingKey = RandStringBytesRmndr(10) // signing key for JWT
+				refreshToken, refreshExpiresAt := tokenGenerator(), time.Now().Add(time.Hour*72)
+				accessToken, accessExpiresAt := newJwtToken(guid, signingKey, time.Minute*30)
 
 				filter := bson.D{{"refreshtoken", token.RefreshToken}}
 				hashedRefreshToken := hashToken([]byte(refreshToken)) // to hash new refresh token
 				update := bson.D{
 					{"$set", bson.D{
 						{"refreshtoken", hashedRefreshToken},
-						{"accesstoken", accessToken},
+						{"signingkey", signingKey},
 					}},
 				}
 				updateTokens(client, collection, filter, update)
@@ -67,11 +68,12 @@ func CreateHandler(w http.ResponseWriter, r *http.Request) {
 	guid := params["guid"]
 	fmt.Printf("GUID: %v\n", guid)
 
-	refreshToken, refreshExpiresAt := newToken(guid, signingKey, time.Hour*72)
-	accessToken, accessExpiresAt := newToken(guid, signingKey, time.Minute*30)
+	var signingKey = RandStringBytesRmndr(10) // signing key for JWT
+	refreshToken, refreshExpiresAt := tokenGenerator(), time.Now().Add(time.Hour*72)
+	accessToken, accessExpiresAt := newJwtToken(guid, signingKey, time.Minute*30)
 	hashedRefreshToken := hashToken([]byte(refreshToken))
 
-	document := Token{guid, accessToken, hashedRefreshToken}
+	document := Token{guid, signingKey, hashedRefreshToken}
 	tokens := []interface{}{document}
 
 	createTokens(client, collection, tokens)
@@ -99,7 +101,7 @@ func DeleteHandler(w http.ResponseWriter, r *http.Request) {
 	} else {
 		oldRefreshToken, err := base64.StdEncoding.DecodeString(cookie.Value)
 		if err != nil {
-			log.Fatal(err)
+			log.Println(err)
 		}
 		fmt.Printf("Refresh token for deleting: %v\n", string(oldRefreshToken))
 
@@ -131,7 +133,7 @@ func DeleteAllHandler(w http.ResponseWriter, r *http.Request) {
 	} else {
 		oldRefreshToken, err := base64.StdEncoding.DecodeString(cookie.Value)
 		if err != nil {
-			log.Fatal(err)
+			log.Println(err)
 		}
 		fmt.Printf("Refresh token: %v\n", string(oldRefreshToken))
 

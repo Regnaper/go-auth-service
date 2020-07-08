@@ -14,25 +14,25 @@ func createTokens(client *mongo.Client, collection *mongo.Collection, tokens []i
 	var insertSession mongo.Session
 
 	if insertSession, err = client.StartSession(); err != nil {
-		log.Fatal(err)
+		log.Println(err)
 	}
 	if err = insertSession.StartTransaction(); err != nil {
-		log.Fatal(err)
+		log.Println(err)
 	}
 	if err = mongo.WithSession(context.TODO(), insertSession, func(sc mongo.SessionContext) error {
 		if insertManyResult, err = collection.InsertMany(context.TODO(), tokens); err != nil {
-			log.Fatal(err)
+			log.Println(err)
 		}
 		if len(insertManyResult.InsertedIDs) != len(tokens) {
 			fmt.Printf("Insert failed, expected %v but got %v.\n", len(tokens), len(insertManyResult.InsertedIDs))
 		}
 
 		if err = insertSession.CommitTransaction(sc); err != nil {
-			log.Fatal(err)
+			log.Println(err)
 		}
 		return nil
 	}); err != nil {
-		log.Fatal(err)
+		log.Println(err)
 	}
 	insertSession.EndSession(context.TODO())
 
@@ -45,25 +45,25 @@ func updateTokens(client *mongo.Client, collection *mongo.Collection, filter bso
 	var updateSession mongo.Session
 
 	if updateSession, err = client.StartSession(); err != nil {
-		log.Fatal(err)
+		log.Println(err)
 	}
 	if err = updateSession.StartTransaction(); err != nil {
-		log.Fatal(err)
+		log.Println(err)
 	}
 	if err = mongo.WithSession(context.TODO(), updateSession, func(sc mongo.SessionContext) error {
 		if updateResult, err = collection.UpdateMany(context.TODO(), filter, update); err != nil {
-			log.Fatal(err)
+			log.Println(err)
 		}
 		if updateResult.ModifiedCount != updateResult.MatchedCount {
 			fmt.Printf("Update failed, expected %v but got %v.\n", int(updateResult.MatchedCount), int(updateResult.ModifiedCount))
 		}
 
 		if err = updateSession.CommitTransaction(sc); err != nil {
-			log.Fatal(err)
+			log.Println(err)
 		}
 		return nil
 	}); err != nil {
-		log.Fatal(err)
+		log.Println(err)
 	}
 	updateSession.EndSession(context.TODO())
 
@@ -76,22 +76,22 @@ func deleteTokens(client *mongo.Client, collection *mongo.Collection, filter bso
 	var deleteSession mongo.Session
 
 	if deleteSession, err = client.StartSession(); err != nil {
-		log.Fatal(err)
+		log.Println(err)
 	}
 	if err = deleteSession.StartTransaction(); err != nil {
-		log.Fatal(err)
+		log.Println(err)
 	}
 	if err = mongo.WithSession(context.TODO(), deleteSession, func(sc mongo.SessionContext) error {
 		if deleteManyResult, err = collection.DeleteMany(context.TODO(), filter); err != nil {
-			log.Fatal(err)
+			log.Println(err)
 		}
 
 		if err = deleteSession.CommitTransaction(sc); err != nil {
-			log.Fatal(err)
+			log.Println(err)
 		}
 		return nil
 	}); err != nil {
-		log.Fatal(err)
+		log.Println(err)
 	}
 	deleteSession.EndSession(context.TODO())
 
@@ -107,7 +107,7 @@ func findTokensByGuid(collection *mongo.Collection, guid string) []*Token {
 	// Passing nil as the filter matches all documents in the collection
 	cur, err := collection.Find(context.TODO(), filter)
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
 	}
 
 	// Finding multiple documents returns a cursor
@@ -118,14 +118,14 @@ func findTokensByGuid(collection *mongo.Collection, guid string) []*Token {
 		var elem Token
 		err := cur.Decode(&elem)
 		if err != nil {
-			log.Fatal(err)
+			log.Println(err)
 		}
 
 		results = append(results, &elem)
 	}
 
 	if err := cur.Err(); err != nil {
-		log.Fatal(err)
+		log.Println(err)
 	}
 
 	// Close the cursor once finished
