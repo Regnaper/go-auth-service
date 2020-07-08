@@ -32,7 +32,6 @@ func RefreshHandler(w http.ResponseWriter, r *http.Request) {
 		for _, token := range userTokens {
 			// update refresh and access token if refresh token from cookie was find
 			if verifyRefreshToken([]byte(token.RefreshToken), oldRefreshToken) {
-				var signingKey = RandStringBytesRmndr(10) // signing key for JWT
 				refreshToken, refreshExpiresAt := tokenGenerator(), time.Now().Add(time.Hour*72)
 				accessToken, accessExpiresAt := newJwtToken(guid, signingKey, time.Minute*30)
 
@@ -41,7 +40,6 @@ func RefreshHandler(w http.ResponseWriter, r *http.Request) {
 				update := bson.D{
 					{"$set", bson.D{
 						{"refreshtoken", hashedRefreshToken},
-						{"signingkey", signingKey},
 					}},
 				}
 				updateTokens(client, collection, filter, update)
@@ -68,12 +66,11 @@ func CreateHandler(w http.ResponseWriter, r *http.Request) {
 	guid := params["guid"]
 	fmt.Printf("GUID: %v\n", guid)
 
-	var signingKey = RandStringBytesRmndr(10) // signing key for JWT
 	refreshToken, refreshExpiresAt := tokenGenerator(), time.Now().Add(time.Hour*72)
 	accessToken, accessExpiresAt := newJwtToken(guid, signingKey, time.Minute*30)
 	hashedRefreshToken := hashToken([]byte(refreshToken))
 
-	document := Token{guid, signingKey, hashedRefreshToken}
+	document := Token{guid, hashedRefreshToken}
 	tokens := []interface{}{document}
 
 	createTokens(client, collection, tokens)

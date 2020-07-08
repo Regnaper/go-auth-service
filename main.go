@@ -7,13 +7,13 @@ import (
 	"os"
 )
 
+var signingKey = []byte(os.Getenv("SECRET_KEY")) // signing key for JWT
 var domain = "rocky-escarpment-09841.herokuapp.com" // server domain name for cookie
 var port = os.Getenv("PORT")
 var databaseName = "tokensdb"
 
 type Token struct {
 	GUID         string
-	SigningKey	 []byte
 	RefreshToken string
 }
 

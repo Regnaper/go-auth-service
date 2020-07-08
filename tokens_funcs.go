@@ -56,16 +56,6 @@ func addCookie(name string, value string, expires time.Time, httpOnly bool, w ht
 }
 
 
-func RandStringBytesRmndr(n int) []byte {
-	const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-	b := make([]byte, n)
-	for i := range b {
-		b[i] = letterBytes[rand.Int63() % int64(len(letterBytes))]
-	}
-	return b
-}
-
-
 func tokenGenerator() string {
 	b := make([]byte, 4)
 	rand.Read(b)
